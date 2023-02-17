@@ -1,5 +1,9 @@
 use data_encoding::BASE64;
 
+const CHARS: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+mod encode;
+
 pub struct EncodeOptions {
 
 }
@@ -12,7 +16,7 @@ impl Default for EncodeOptions {
 
 impl EncodeOptions {
     pub fn encode(self, input: &[u8]) -> String {
-        BASE64.encode(input)
+        encode::encode(input)
     }
 }
 

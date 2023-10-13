@@ -1,7 +1,6 @@
 use bs64::codecs::sponge::Sponge;
 use data_encoding::BASE64;
 use base64::{Engine as _, engine::general_purpose};
-use rand::prelude::*;
 use std::time::{Duration, Instant};
 
 use bs64::codecs::fairy::Fairy;
@@ -35,59 +34,54 @@ fn main() {
     let num_bytes = 10000;
     let iterations = 1000;
 
-    let mut bytes = Vec::with_capacity(1000);
-    for _ in 0..num_bytes {
-        bytes.push(random::<u8>());
+    let mut bytes = Vec::with_capacity(num_bytes);
+    for i in 0..num_bytes {
+        bytes.push(i as u8);
     }
     println!("{0: <10} | {1: <15} | {2: <10}", "name", "its_per_sec", "ns_per_it");
 
-    let mut times = Vec::new();
+    let start = Instant::now();
     for _ in 0..iterations {
-        let start = Instant::now();
         vanilla.encode(&bytes);
-        times.push(start.elapsed());
     }
-
-    let total: Duration = times.iter().sum();
+    let total = start.elapsed();
     print_performance("vanilla", total, iterations);
 
-    let mut times = Vec::new();
+    let mut output = vec![0u8; (num_bytes * 4) / 3 + 4];
+    let start = Instant::now();
     for _ in 0..iterations {
-        let start = Instant::now();
-        fairy.encode(&bytes);
-        times.push(start.elapsed());
+        unsafe {
+            bs64::codecs::avx2::encode(output.as_mut_slice(), &bytes);
+        }
     }
+    let total = start.elapsed();
+    print_performance("avx2", total, iterations);
 
-    let total: Duration = times.iter().sum();
+    let start = Instant::now();
+    for _ in 0..iterations {
+        fairy.encode(&bytes);
+    }
+    let total = start.elapsed();
     print_performance("fairy", total, iterations);
 
-    let mut times = Vec::new();
+    let start = Instant::now();
     for _ in 0..iterations {
-        let start = Instant::now();
         sponge.encode(&bytes);
-        times.push(start.elapsed());
     }
-
-    let total: Duration = times.iter().sum();
+    let total = start.elapsed();
     print_performance("sponge", total, iterations);
 
-    let mut times = Vec::new();
+    let start = Instant::now();
     for _ in 0..iterations {
-        let start = Instant::now();
         BASE64.encode(&bytes);
-        times.push(start.elapsed());
     }
-
-    let total: Duration = times.iter().sum();
+    let total = start.elapsed();
     print_performance("data_enc", total, iterations);
 
-    let mut times = Vec::new();
+    let start = Instant::now();
     for _ in 0..iterations {
-        let start = Instant::now();
         let _s: String = general_purpose::STANDARD_NO_PAD.encode(&bytes);
-        times.push(start.elapsed());
     }
-
-    let total: Duration = times.iter().sum();
+    let total = start.elapsed();
     print_performance("base64", total, iterations);
 }

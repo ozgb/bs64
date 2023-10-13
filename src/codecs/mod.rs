@@ -6,9 +6,10 @@ use thiserror::Error;
 pub mod fairy;
 pub mod vanilla;
 pub mod sponge;
+pub mod avx2;
 
 /// BUF_LEN must be divisible by 3.
-const BUF_LEN: usize = 1024;
+const BUF_LEN: usize = 64;
 
 pub type Default = vanilla::Vanilla;
 
@@ -35,7 +36,7 @@ impl CodecBuf {
     }
 
     pub fn extend_by_slice(&mut self, slice: &[u8]) -> Result<(), CodecError> {
-        if self.buf_pos + slice.len() >= BUF_LEN {
+        if self.buf_pos + slice.len() > BUF_LEN {
             return Err(CodecError::BufferOverflow);
         }
         self.buf[self.buf_pos..self.buf_pos + slice.len()].copy_from_slice(slice);

@@ -56,8 +56,13 @@ impl Codec for Vanilla {
 pub fn push_chars(chunk: &[u8], output: &mut CodecBuf, num_chars: usize) -> Result<(), CodecError> {
     let n: u32 = ((chunk[0] as u32) << 16) + ((chunk[1] as u32) << 8) + chunk[2] as u32;
     let n_split = [(n >> 18) & 0x3f, (n >> 12) & 0x3f, (n >> 6) & 0x3f, n & 0x3f];
-    for i in 0..num_chars {
-        output.push(CHARS[n_split[i] as usize])?;
-    }
+
+    let o0 = CHARS[n_split[0] as usize];
+    let o1 = CHARS[n_split[1] as usize];
+    let o2 = CHARS[n_split[2] as usize];
+    let o3 = CHARS[n_split[3] as usize];
+
+    output.extend_by_slice(&[o0, o1, o2, o3][..num_chars])?;
+
     Ok(())
 }

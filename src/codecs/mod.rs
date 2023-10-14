@@ -4,6 +4,7 @@ use thiserror::Error;
 
 pub mod avx2;
 pub mod fairy;
+pub mod safesimd;
 pub mod sponge;
 pub mod vanilla;
 

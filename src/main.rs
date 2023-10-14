@@ -17,21 +17,25 @@ fn eval<T: Codec>(c: &T) {
 }
 
 fn eval_chromium() {
-    let num_bytes = 100;
-    let mut output = vec![0u8; (num_bytes * 4) / 3 + 4];
-    let mut bytes = Vec::with_capacity(num_bytes);
-    for i in 0..num_bytes {
-        bytes.push(i as u8);
+    for num_bytes in 100..104 {
+        let mut output = vec![0u8; (num_bytes * 4) / 3 + 4];
+        let mut bytes = Vec::with_capacity(num_bytes);
+        for i in 0..num_bytes {
+            bytes.push(i as u8);
+        }
+        bs64::codecs::safesimd::encode(&bytes, output.as_mut_slice());
+        println!("{:?}", String::from_utf8(output.to_vec()).unwrap());
+        output.fill_with(|| 0);
+        bs64::codecs::safesimd::encode_alt(&bytes, output.as_mut_slice());
+        println!("{:?}", String::from_utf8(output.to_vec()).unwrap());
+        println!("{}", BASE64.encode(&bytes));
     }
-    bs64::codecs::safesimd::encode(&bytes, output.as_mut_slice());
-    println!("{:?}", String::from_utf8(output.to_vec()).unwrap());
-    println!("{}", BASE64.encode(&bytes));
 }
 
 fn print_performance(name: &str, time: Duration, iterations: usize) {
     let its_per_sec = iterations as f64 / time.as_secs_f64();
     let ns_per_it = time.as_nanos() / iterations as u128;
-    println!("{name: <10} | {its_per_sec: <15.2} | {ns_per_it: <10}");
+    println!("{name: <15} | {its_per_sec: <15.2} | {ns_per_it: <10}");
 }
 
 /// main function
@@ -51,7 +55,7 @@ fn main() {
         bytes.push(i as u8);
     }
     println!(
-        "{0: <10} | {1: <15} | {2: <10}",
+        "{0: <15} | {1: <15} | {2: <10}",
         "name", "its_per_sec", "ns_per_it"
     );
 
@@ -79,6 +83,14 @@ fn main() {
     }
     let total = start.elapsed();
     print_performance("safesimd", total, iterations);
+
+    let mut output = vec![0u8; (num_bytes * 4) / 3 + 4];
+    let start = Instant::now();
+    for _ in 0..iterations {
+        bs64::codecs::safesimd::encode_alt(&bytes, output.as_mut_slice());
+    }
+    let total = start.elapsed();
+    print_performance("safesimd_alt", total, iterations);
 
     //let start = Instant::now();
     //for _ in 0..iterations {

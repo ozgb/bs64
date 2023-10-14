@@ -1,5 +1,5 @@
 #[cfg(target_arch = "x86_64")]
-use core::arch::x86_64::*;
+use std::arch::x86_64::*;
 
 use data_encoding::BASE64;
 
@@ -71,6 +71,7 @@ unsafe fn enc_translate(input: __m256i) -> __m256i {
 }
 
 
+#[target_feature(enable = "avx2")]
 pub unsafe fn encode(dest: &mut [u8], str: &[u8]) {
     let mut str_offset: isize = 0;
     let mut dest_offset = 0;

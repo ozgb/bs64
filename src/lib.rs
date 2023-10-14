@@ -5,18 +5,13 @@ pub mod codec;
 
 const CHARS: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
+#[derive(Default)]
 pub struct EncodeOptions {}
 
 pub fn encode_len(input: &[u8]) -> usize {
     match input.len() % 3 {
         0 => input.len() / 3 * 4,
         _ => input.len() / 3 * 4 + 4,
-    }
-}
-
-impl Default for EncodeOptions {
-    fn default() -> Self {
-        Self {}
     }
 }
 
@@ -36,13 +31,8 @@ impl EncodeOptions {
     }
 }
 
+#[derive(Default)]
 pub struct DecodeOptions {}
-
-impl Default for DecodeOptions {
-    fn default() -> Self {
-        Self {}
-    }
-}
 
 impl DecodeOptions {
     pub fn decode(self, input: &[u8]) -> Result<Vec<u8>, data_encoding::DecodeError> {

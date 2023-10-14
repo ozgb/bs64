@@ -2,6 +2,7 @@ use base64::{engine::general_purpose, Engine as _};
 use data_encoding::BASE64;
 use std::time::{Duration, Instant};
 
+#[allow(dead_code)]
 fn eval() {
     for num_bytes in 100..104 {
         let mut output = vec![0u8; (num_bytes * 4) / 3 + 4];

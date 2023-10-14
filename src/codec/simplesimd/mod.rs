@@ -21,17 +21,17 @@ struct OutputBytes {
 fn encode_any_inner(src: &[InputBytes], dest: &mut [OutputBytes]) -> usize {
     for (dest, src) in dest.iter_mut().zip(src.iter()) {
         let n: u32 = ((src.t1 as u32) << 16) + ((src.t2 as u32) << 8) + src.t3 as u32;
-        let n_split = [
-            (n >> 18) & 0x3f,
-            (n >> 12) & 0x3f,
-            (n >> 6) & 0x3f,
-            n & 0x3f,
-        ];
+        let n_split = (
+            ((n >> 18) & 0x3f) as usize,
+            ((n >> 12) & 0x3f) as usize,
+            ((n >> 6) & 0x3f) as usize,
+            (n & 0x3f) as usize,
+        );
 
-        dest.d1 = CHARS[n_split[0] as usize];
-        dest.d2 = CHARS[n_split[1] as usize];
-        dest.d3 = CHARS[n_split[2] as usize];
-        dest.d4 = CHARS[n_split[3] as usize];
+        dest.d1 = CHARS[n_split.0];
+        dest.d2 = CHARS[n_split.1];
+        dest.d3 = CHARS[n_split.2];
+        dest.d4 = CHARS[n_split.3];
     }
 
     dest.len() * 4
@@ -41,24 +41,27 @@ fn encode_any_inner(src: &[InputBytes], dest: &mut [OutputBytes]) -> usize {
 fn encode_32_inner(src: &[InputBytes], dest: &mut [OutputBytes]) -> usize {
     for (dest, src) in dest.iter_mut().zip(src.iter()) {
         let n: u32 = ((src.t1 as u32) << 16) + ((src.t2 as u32) << 8) + src.t3 as u32;
-        let n_split = [
-            (n >> 18) & 0x3f,
-            (n >> 12) & 0x3f,
-            (n >> 6) & 0x3f,
-            n & 0x3f,
-        ];
 
-        dest.d1 = CHARS[n_split[0] as usize];
-        dest.d2 = CHARS[n_split[1] as usize];
-        dest.d3 = CHARS[n_split[2] as usize];
-        dest.d4 = CHARS[n_split[3] as usize];
+        let n_split = (
+            ((n >> 18) & 0x3f) as usize,
+            ((n >> 12) & 0x3f) as usize,
+            ((n >> 6) & 0x3f) as usize,
+            (n & 0x3f) as usize,
+        );
+
+        dest.d1 = CHARS[n_split.0];
+        dest.d2 = CHARS[n_split.1];
+        dest.d3 = CHARS[n_split.2];
+        dest.d4 = CHARS[n_split.3];
     }
 
     32
 }
 
 /// Encode 24 bytes from src slice to 32 destination slice
-/// Unsafe because no checks are performed on the slice lengths
+///
+/// # Safety
+/// - No checks are performed on the slice lengths
 pub unsafe fn encode_32(src: &[u8], dest: &mut [u8]) -> usize {
     let src: &[InputBytes] = std::slice::from_raw_parts(src.as_ptr() as *const InputBytes, 8);
     let dest: &mut [OutputBytes] =
@@ -68,7 +71,9 @@ pub unsafe fn encode_32(src: &[u8], dest: &mut [u8]) -> usize {
 }
 
 /// Encode any length src and destination slice
-/// Unsafe because no checks are performed on the destination slice length
+///
+/// # Safety
+/// - No checks are performed on the destination slice length
 unsafe fn encode_any(src: &[u8], dest: &mut [u8]) -> usize {
     let src_len = src.len() / 3;
     let src: &[InputBytes] = std::slice::from_raw_parts(src.as_ptr() as *const InputBytes, src_len);
@@ -102,17 +107,17 @@ pub fn encode(src: &[u8], dest: &mut [u8]) -> usize {
     match len - src_i {
         0 => (),
         1 => {
-            let t1 = src[src_i as usize];
+            let t1 = src[src_i];
             let n: u32 = (t1 as u32) << 16;
-            let n_split = [
+            let n_split = (
                 ((n >> 18) & 0x3f) as usize,
                 ((n >> 12) & 0x3f) as usize,
                 ((n >> 6) & 0x3f) as usize,
                 (n & 0x3f) as usize,
-            ];
+            );
 
-            dest[dest_i] = CHARS[n_split[0]];
-            dest[dest_i + 1] = CHARS[n_split[1]];
+            dest[dest_i] = CHARS[n_split.0];
+            dest[dest_i + 1] = CHARS[n_split.1];
             dest[dest_i + 2] = CHARPAD;
             dest[dest_i + 3] = CHARPAD;
             dest_i += 4;
@@ -120,16 +125,16 @@ pub fn encode(src: &[u8], dest: &mut [u8]) -> usize {
         _ => {
             let (t1, t2) = (src[src_i], src[src_i + 1]);
             let n: u32 = ((t1 as u32) << 16) + ((t2 as u32) << 8);
-            let n_split = [
+            let n_split = (
                 ((n >> 18) & 0x3f) as usize,
                 ((n >> 12) & 0x3f) as usize,
                 ((n >> 6) & 0x3f) as usize,
                 (n & 0x3f) as usize,
-            ];
+            );
 
-            dest[dest_i] = CHARS[n_split[0]];
-            dest[dest_i + 1] = CHARS[n_split[1]];
-            dest[dest_i + 2] = CHARS[n_split[2]];
+            dest[dest_i] = CHARS[n_split.0];
+            dest[dest_i + 1] = CHARS[n_split.1];
+            dest[dest_i + 2] = CHARS[n_split.2];
             dest[dest_i + 3] = CHARPAD;
             dest_i += 4;
         }

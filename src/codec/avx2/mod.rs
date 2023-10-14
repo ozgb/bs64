@@ -63,8 +63,8 @@ unsafe fn enc_translate(input: __m256i) -> __m256i {
     let mut indices = _mm256_subs_epu8(input, _mm256_set1_epi8(51));
     let mask = _mm256_cmpgt_epi8(input, _mm256_set1_epi8(25));
     indices = _mm256_sub_epi8(indices, mask);
-    let out = _mm256_add_epi8(input, _mm256_shuffle_epi8(lut, indices));
-    out
+
+    _mm256_add_epi8(input, _mm256_shuffle_epi8(lut, indices))
 }
 
 pub fn encode_with_fallback(dest: &mut [u8], str: &[u8]) -> usize {
@@ -75,6 +75,10 @@ pub fn encode_with_fallback(dest: &mut [u8], str: &[u8]) -> usize {
     }
 }
 
+/// Encode a slice of bytes into base64 using avx2 instructions
+///
+/// # Safety
+/// - Must only be executed on avx2 enabled cpus
 #[target_feature(enable = "avx2")]
 pub unsafe fn encode(dest: &mut [u8], str: &[u8]) -> usize {
     let mut str_offset: isize = 0;
@@ -84,13 +88,13 @@ pub unsafe fn encode(dest: &mut [u8], str: &[u8]) -> usize {
 
     if str.len() >= 32 - 4 {
         let mask_vec = _mm256_set_epi32(
-            0x8000000 as i32,
-            0x8000000 as i32,
-            0x8000000 as i32,
-            0x8000000 as i32,
-            0x8000000 as i32,
-            0x8000000 as i32,
-            0x8000000 as i32,
+            0x8000000_i32,
+            0x8000000_i32,
+            0x8000000_i32,
+            0x8000000_i32,
+            0x8000000_i32,
+            0x8000000_i32,
+            0x8000000_i32,
             0, // we do not load the first 4 bytes
         );
 

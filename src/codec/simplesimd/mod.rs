@@ -1,6 +1,8 @@
-use crate::CHARS;
+use self::luts::{E0, E1, E2};
 
 const CHARPAD: u8 = b'=';
+
+mod luts;
 
 #[repr(packed(1))]
 struct InputBytes {
@@ -20,18 +22,11 @@ struct OutputBytes {
 #[inline(always)]
 fn encode_any_inner(src: &[InputBytes], dest: &mut [OutputBytes]) -> usize {
     for (dest, src) in dest.iter_mut().zip(src.iter()) {
-        let n: u32 = ((src.t1 as u32) << 16) + ((src.t2 as u32) << 8) + src.t3 as u32;
-        let n_split = (
-            ((n >> 18) & 0x3f) as usize,
-            ((n >> 12) & 0x3f) as usize,
-            ((n >> 6) & 0x3f) as usize,
-            (n & 0x3f) as usize,
-        );
-
-        dest.d1 = CHARS[n_split.0];
-        dest.d2 = CHARS[n_split.1];
-        dest.d3 = CHARS[n_split.2];
-        dest.d4 = CHARS[n_split.3];
+        let (t1, t2, t3) = (src.t1, src.t2, src.t3);
+        dest.d1 = E0[t1 as usize];
+        dest.d2 = E1[(((t1 & 0x03) << 4) | ((t2 >> 4) & 0x0F)) as usize];
+        dest.d3 = E1[(((t2 & 0x0F) << 2) | ((t3 >> 6) & 0x03)) as usize];
+        dest.d4 = E2[t3 as usize];
     }
 
     dest.len() * 4
@@ -40,19 +35,11 @@ fn encode_any_inner(src: &[InputBytes], dest: &mut [OutputBytes]) -> usize {
 #[inline(always)]
 fn encode_32_inner(src: &[InputBytes], dest: &mut [OutputBytes]) -> usize {
     for (dest, src) in dest.iter_mut().zip(src.iter()) {
-        let n: u32 = ((src.t1 as u32) << 16) + ((src.t2 as u32) << 8) + src.t3 as u32;
-
-        let n_split = (
-            ((n >> 18) & 0x3f) as usize,
-            ((n >> 12) & 0x3f) as usize,
-            ((n >> 6) & 0x3f) as usize,
-            (n & 0x3f) as usize,
-        );
-
-        dest.d1 = CHARS[n_split.0];
-        dest.d2 = CHARS[n_split.1];
-        dest.d3 = CHARS[n_split.2];
-        dest.d4 = CHARS[n_split.3];
+        let (t1, t2, t3) = (src.t1, src.t2, src.t3);
+        dest.d1 = E0[t1 as usize];
+        dest.d2 = E1[(((t1 & 0x03) << 4) | ((t2 >> 4) & 0x0F)) as usize];
+        dest.d3 = E1[(((t2 & 0x0F) << 2) | ((t3 >> 6) & 0x03)) as usize];
+        dest.d4 = E2[t3 as usize];
     }
 
     32
@@ -108,33 +95,17 @@ pub fn encode(src: &[u8], dest: &mut [u8]) -> usize {
         0 => (),
         1 => {
             let t1 = src[src_i];
-            let n: u32 = (t1 as u32) << 16;
-            let n_split = (
-                ((n >> 18) & 0x3f) as usize,
-                ((n >> 12) & 0x3f) as usize,
-                ((n >> 6) & 0x3f) as usize,
-                (n & 0x3f) as usize,
-            );
-
-            dest[dest_i] = CHARS[n_split.0];
-            dest[dest_i + 1] = CHARS[n_split.1];
+            dest[dest_i] = E0[t1 as usize];
+            dest[dest_i + 1] = E1[((t1 & 0x03) << 4) as usize];
             dest[dest_i + 2] = CHARPAD;
             dest[dest_i + 3] = CHARPAD;
             dest_i += 4;
         }
         _ => {
             let (t1, t2) = (src[src_i], src[src_i + 1]);
-            let n: u32 = ((t1 as u32) << 16) + ((t2 as u32) << 8);
-            let n_split = (
-                ((n >> 18) & 0x3f) as usize,
-                ((n >> 12) & 0x3f) as usize,
-                ((n >> 6) & 0x3f) as usize,
-                (n & 0x3f) as usize,
-            );
-
-            dest[dest_i] = CHARS[n_split.0];
-            dest[dest_i + 1] = CHARS[n_split.1];
-            dest[dest_i + 2] = CHARS[n_split.2];
+            dest[dest_i] = E0[t1 as usize];
+            dest[dest_i + 1] = E1[(((t1 & 0x03) << 4) | ((t2 >> 4) & 0x0F)) as usize];
+            dest[dest_i + 2] = E1[((t2 & 0x0F) << 2) as usize];
             dest[dest_i + 3] = CHARPAD;
             dest_i += 4;
         }

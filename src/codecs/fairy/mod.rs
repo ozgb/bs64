@@ -5,8 +5,7 @@ use lut::{C0_LUT, C1_LUT, C2_LUT, C3_LUT};
 
 use super::{Codec, CodecError};
 
-pub struct Fairy {
-}
+pub struct Fairy {}
 
 impl Default for Fairy {
     fn default() -> Self {
@@ -32,23 +31,27 @@ impl Codec for Fairy {
             1 => push_chars_lut_n(&last_chunk, output)?,
             2 => push_chars_lut_n(&last_chunk, output)?,
             3 => push_chars_lut_n(&last_chunk, output)?,
-            _ => unreachable!()
+            _ => unreachable!(),
         }
 
-        match input.len()%3 {
+        match input.len() % 3 {
             0 => (),
             1 => {
                 output.push(b'=')?;
                 output.push(b'=')?;
-            },
+            }
             2 => output.push(b'=')?,
-            _ => unreachable!()
+            _ => unreachable!(),
         }
 
         Ok(())
     }
 
-    fn decode_buf<R: std::io::Read, W: std::io::Write>(&self, _input: &[u8], _output: &mut Vec<u8>) -> Result<(), CodecError> {
+    fn decode_buf<R: std::io::Read, W: std::io::Write>(
+        &self,
+        _input: &[u8],
+        _output: &mut Vec<u8>,
+    ) -> Result<(), CodecError> {
         todo!()
     }
 }
@@ -76,14 +79,14 @@ pub fn push_chars_lut_n(chunk: &[u8], output: &mut CodecBuf) -> Result<(), Codec
         output.push(C1_LUT[i as usize])?;
     }
     if chunk.len() < 2 {
-        return Ok(())
+        return Ok(());
     }
     {
         let i: u16 = ((*chunk.get(2).unwrap_or(&0) as u16) << 8) + chunk[1] as u16;
         output.push(C2_LUT[i as usize])?;
     }
     if chunk.len() < 3 {
-        return Ok(())
+        return Ok(());
     }
     output.push(C3_LUT[chunk[2] as usize])?;
     Ok(())

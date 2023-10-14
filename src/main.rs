@@ -1,6 +1,6 @@
+use base64::{engine::general_purpose, Engine as _};
 use bs64::codecs::sponge::Sponge;
 use data_encoding::BASE64;
-use base64::{Engine as _, engine::general_purpose};
 use std::time::{Duration, Instant};
 
 use bs64::codecs::fairy::Fairy;
@@ -38,7 +38,10 @@ fn main() {
     for i in 0..num_bytes {
         bytes.push(i as u8);
     }
-    println!("{0: <10} | {1: <15} | {2: <10}", "name", "its_per_sec", "ns_per_it");
+    println!(
+        "{0: <10} | {1: <15} | {2: <10}",
+        "name", "its_per_sec", "ns_per_it"
+    );
 
     let start = Instant::now();
     for _ in 0..iterations {

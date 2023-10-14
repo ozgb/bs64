@@ -1,12 +1,11 @@
 /// Encoders and decoders for various formats.
-
 use std::io::{Read, Write};
 use thiserror::Error;
 
-pub mod fairy;
-pub mod vanilla;
-pub mod sponge;
 pub mod avx2;
+pub mod fairy;
+pub mod sponge;
+pub mod vanilla;
 
 /// BUF_LEN must be divisible by 3.
 const BUF_LEN: usize = 64;
@@ -53,7 +52,11 @@ impl CodecBuf {
         self.buf_pos = slice.len();
     }
 
-    pub fn read_from<R: std::io::Read>(&mut self, input: &mut R, n: usize) -> Result<usize, CodecError> {
+    pub fn read_from<R: std::io::Read>(
+        &mut self,
+        input: &mut R,
+        n: usize,
+    ) -> Result<usize, CodecError> {
         let bytes_read = input.read(&mut self.buf[..n])?;
         self.buf_pos = bytes_read;
         Ok(bytes_read)
@@ -87,7 +90,6 @@ pub enum CodecError {
 
 /// Trait for encoding and decoding data.
 pub trait Codec {
-
     /// Encodes the given input.
     fn encode(&self, input: &[u8]) -> String {
         let mut output = Vec::with_capacity(input.len() * 4 / 3);
@@ -96,14 +98,21 @@ pub trait Codec {
         let mut input_stream = std::io::Cursor::new(input);
         match self.encode_stream(&mut input_stream, &mut output) {
             Ok(_) => (),
-            Err(e) => {println!("err: {:?}", e); panic!(":("); }
+            Err(e) => {
+                println!("err: {:?}", e);
+                panic!(":(");
+            }
         }
 
         String::from_utf8(output).unwrap()
     }
 
     /// Encodes the given input.
-    fn encode_stream<R: Read, W: Write>(&self, input: &mut R, output: &mut W) -> Result<(), CodecError> {
+    fn encode_stream<R: Read, W: Write>(
+        &self,
+        input: &mut R,
+        output: &mut W,
+    ) -> Result<(), CodecError> {
         let mut input_buf = CodecBuf::new();
         let mut output_buf = CodecBuf::new();
 
@@ -128,7 +137,11 @@ pub trait Codec {
     fn decode_stream<R: Read, W: Write>(&self, _input: R, _output: W) -> Result<(), CodecError> {
         todo!()
     }
-    
+
     /// Decodes the given input.
-    fn decode_buf<R: Read, W: Write>(&self, input: &[u8], output: &mut Vec<u8>) -> Result<(), CodecError>;
+    fn decode_buf<R: Read, W: Write>(
+        &self,
+        input: &[u8],
+        output: &mut Vec<u8>,
+    ) -> Result<(), CodecError>;
 }

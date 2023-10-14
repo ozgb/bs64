@@ -1,7 +1,7 @@
 #[cfg(target_arch = "x86_64")]
 use std::arch::x86_64::*;
 
-use data_encoding::BASE64;
+use super::simplesimd;
 
 // Rust implementation of AVX2 fastbase64:
 // https://github.com/lemire/fastbase64/blob/master/src/fastavxbase64.c
@@ -67,8 +67,16 @@ unsafe fn enc_translate(input: __m256i) -> __m256i {
     out
 }
 
+pub fn encode_with_fallback(dest: &mut [u8], str: &[u8]) -> usize {
+    if is_x86_feature_detected!("avx2") {
+        unsafe { encode(dest, str) }
+    } else {
+        simplesimd::encode(str, dest)
+    }
+}
+
 #[target_feature(enable = "avx2")]
-pub unsafe fn encode(dest: &mut [u8], str: &[u8]) {
+pub unsafe fn encode(dest: &mut [u8], str: &[u8]) -> usize {
     let mut str_offset: isize = 0;
     let mut dest_offset = 0;
 
@@ -108,12 +116,13 @@ pub unsafe fn encode(dest: &mut [u8], str: &[u8]) {
     }
 
     if str_len - str_offset == 0 {
-        return;
+        return dest_offset as usize;
     }
 
-    let output_len = BASE64.encode_len(str.len() - str_offset as usize);
-    BASE64.encode_mut(
+    dest_offset += simplesimd::encode(
         &str[str_offset as usize..],
-        &mut dest[dest_offset as usize..dest_offset as usize + output_len],
-    );
+        &mut dest[dest_offset as usize..],
+    ) as isize;
+
+    dest_offset as usize
 }

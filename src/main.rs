@@ -43,7 +43,7 @@ fn main() {
     eval(&fairy);
     eval(&vanilla);
 
-    let num_bytes = 10000;
+    let num_bytes = 100000;
     let iterations = 1000;
 
     let mut bytes = Vec::with_capacity(num_bytes);
@@ -55,20 +55,12 @@ fn main() {
         "name", "its_per_sec", "ns_per_it"
     );
 
-    let mut output = vec![0u8; (num_bytes * 4) / 3 + 4];
-    let start = Instant::now();
-    for _ in 0..iterations {
-        bs64::codecs::safesimd::encode(&bytes, output.as_mut_slice());
-    }
-    let total = start.elapsed();
-    print_performance("avx2", total, iterations);
-
-    let start = Instant::now();
-    for _ in 0..iterations {
-        vanilla.encode(&bytes);
-    }
-    let total = start.elapsed();
-    print_performance("vanilla", total, iterations);
+    //let start = Instant::now();
+    //for _ in 0..iterations {
+    //    vanilla.encode(&bytes);
+    //}
+    //let total = start.elapsed();
+    //print_performance("vanilla", total, iterations);
 
     let mut output = vec![0u8; (num_bytes * 4) / 3 + 4];
     let start = Instant::now();
@@ -80,19 +72,27 @@ fn main() {
     let total = start.elapsed();
     print_performance("avx2", total, iterations);
 
+    let mut output = vec![0u8; (num_bytes * 4) / 3 + 4];
     let start = Instant::now();
     for _ in 0..iterations {
-        fairy.encode(&bytes);
+        bs64::codecs::safesimd::encode(&bytes, output.as_mut_slice());
     }
     let total = start.elapsed();
-    print_performance("fairy", total, iterations);
+    print_performance("safesimd", total, iterations);
 
-    let start = Instant::now();
-    for _ in 0..iterations {
-        sponge.encode(&bytes);
-    }
-    let total = start.elapsed();
-    print_performance("sponge", total, iterations);
+    //let start = Instant::now();
+    //for _ in 0..iterations {
+    //    fairy.encode(&bytes);
+    //}
+    //let total = start.elapsed();
+    //print_performance("fairy", total, iterations);
+
+    //let start = Instant::now();
+    //for _ in 0..iterations {
+    //    sponge.encode(&bytes);
+    //}
+    //let total = start.elapsed();
+    //print_performance("sponge", total, iterations);
 
     let start = Instant::now();
     for _ in 0..iterations {

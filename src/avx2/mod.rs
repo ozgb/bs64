@@ -1,6 +1,8 @@
 #[cfg(target_arch = "x86_64")]
 use std::arch::x86_64::*;
 
+use crate::CodecError;
+
 use super::simple;
 
 // Rust implementation of AVX2 fastbase64:
@@ -129,4 +131,109 @@ pub unsafe fn encode(dest: &mut [u8], str: &[u8]) -> usize {
     ) as isize;
 
     dest_offset as usize
+}
+
+unsafe fn dec_reshuffle(input: __m256i) -> __m256i {
+    // inlined procedure pack_madd from https://github.com/WojciechMula/base64simd/blob/master/decode/pack.avx2.cpp
+    // The only difference is that elements are reversed,
+    // only the multiplication constants were changed.
+
+    let merge_ab_and_bc: __m256i = _mm256_maddubs_epi16(input, _mm256_set1_epi32(0x01400140)); //_mm256_maddubs_epi16 is likely expensive
+    let out: __m256i = _mm256_madd_epi16(merge_ab_and_bc, _mm256_set1_epi32(0x00011000));
+    // end of inlined
+
+    // Pack bytes together within 32-bit words, discarding words 3 and 7:
+    let out = _mm256_shuffle_epi8(
+        out,
+        _mm256_setr_epi8(
+            2, 1, 0, 6, 5, 4, 10, 9, 8, 14, 13, 12, -1, -1, -1, -1, 2, 1, 0, 6, 5, 4, 10, 9, 8, 14,
+            13, 12, -1, -1, -1, -1,
+        ),
+    );
+    // the call to _mm256_permutevar8x32_epi32 could be replaced by a call to _mm256_storeu2_m128i but it is doubtful that it would help
+    _mm256_permutevar8x32_epi32(out, _mm256_setr_epi32(0, 1, 2, 4, 5, 6, -1, -1))
+}
+
+pub fn decode_with_fallback(dest: &mut [u8], str: &[u8]) -> Result<usize, CodecError> {
+    if is_x86_feature_detected!("avx2") {
+        unsafe { decode(dest, str) }
+    } else {
+        simple::decode(str, dest)
+    }
+}
+
+/// Decode a slice of bytes into base64 using avx2 instructions
+///
+/// # Safety
+/// - Must only be executed on avx2 enabled cpus
+#[target_feature(enable = "avx2")]
+pub unsafe fn decode(out: &mut [u8], src: &[u8]) -> Result<usize, CodecError> {
+    let mut src_i: isize = 0;
+    let mut dest_i: isize = 0;
+
+    while src.len() - src_i as usize >= 45 {
+        // The input consists of six character sets in the Base64 alphabet,
+        // which we need to map back to the 6-bit values they represent.
+        // There are three ranges, two singles, and then there's the rest.
+        //
+        //  #  From       To        Add  Characters
+        //  1  [43]       [62]      +19  +
+        //  2  [47]       [63]      +16  /
+        //  3  [48..57]   [52..61]   +4  0..9
+        //  4  [65..90]   [0..25]   -65  A..Z
+        //  5  [97..122]  [26..51]  -71  a..z
+        // (6) Everything else => invalid input
+
+        let str = _mm256_loadu_si256(src.as_ptr().offset(src_i) as *const __m256i);
+
+        // code by @aqrit from
+        // https://github.com/WojciechMula/base64simd/issues/3#issuecomment-271137490
+        // transated into AVX2
+        let lut_lo: __m256i = _mm256_setr_epi8(
+            0x15, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x13, 0x1A, 0x1B, 0x1B,
+            0x1B, 0x1A, 0x15, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x13, 0x1A,
+            0x1B, 0x1B, 0x1B, 0x1A,
+        );
+        let lut_hi: __m256i = _mm256_setr_epi8(
+            0x10, 0x10, 0x01, 0x02, 0x04, 0x08, 0x04, 0x08, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10,
+            0x10, 0x10, 0x10, 0x10, 0x01, 0x02, 0x04, 0x08, 0x04, 0x08, 0x10, 0x10, 0x10, 0x10,
+            0x10, 0x10, 0x10, 0x10,
+        );
+        let lut_roll: __m256i = _mm256_setr_epi8(
+            0, 16, 19, 4, -65, -65, -71, -71, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16, 19, 4, -65, -65, -71,
+            -71, 0, 0, 0, 0, 0, 0, 0, 0,
+        );
+
+        let mask_2f: __m256i = _mm256_set1_epi8(0x2f);
+
+        // lookup
+        let hi_nibbles: __m256i = _mm256_srli_epi32(str, 4);
+        let lo_nibbles: __m256i = _mm256_and_si256(str, mask_2f);
+
+        let lo: __m256i = _mm256_shuffle_epi8(lut_lo, lo_nibbles);
+        let eq_2f: __m256i = _mm256_cmpeq_epi8(str, mask_2f);
+
+        let hi_nibbles = _mm256_and_si256(hi_nibbles, mask_2f);
+        let hi: __m256i = _mm256_shuffle_epi8(lut_hi, hi_nibbles);
+        let roll: __m256i = _mm256_shuffle_epi8(lut_roll, _mm256_add_epi8(eq_2f, hi_nibbles));
+
+        if _mm256_testz_si256(lo, hi) == 0 {
+            break;
+        }
+
+        let str = _mm256_add_epi8(str, roll);
+        // end of copied function
+
+        src_i += 32;
+
+        // end of inlined function
+
+        // Reshuffle the input to packed 12-byte output format:
+        let str = dec_reshuffle(str);
+        _mm256_storeu_si256(out.as_mut_ptr().offset(dest_i) as *mut __m256i, str);
+        dest_i += 24;
+    }
+
+    let end_decode_len = simple::decode(&src[src_i as usize..], &mut out[dest_i as usize..])?;
+    Ok(dest_i as usize + end_decode_len)
 }

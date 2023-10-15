@@ -256,7 +256,7 @@ pub fn decode(src: &[u8], dest: &mut [u8]) -> Result<usize, CodecError> {
             }
             dest_i += 2;
         }
-        _ => panic!("Invalid leftover: {}", leftover),
+        _ => unreachable!(),
     }
 
     Ok(dest_i)

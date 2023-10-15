@@ -1,5 +1,7 @@
 # 🚀 Base 64 
 
+[![](https://img.shields.io/crates/v/bs64.svg)](https://crates.io/crates/bs64) [![Docs](https://docs.rs/bs64/badge.svg)](https://docs.rs/bs64)
+
 ✨ SIMD-accelerated Base64 for Rust ✨
 
 ## 🌟 Features
@@ -10,6 +12,12 @@
 - 🔧 Simple, idiomatic API
 - 📦 Sensible defaults
 - ⚡ Fast
+
+## Installation
+
+```bash
+cargo add bs64
+```
 
 ## Usage
 

@@ -1,7 +1,5 @@
 use thiserror::Error;
 
-use data_encoding::BASE64;
-
 pub mod avx2;
 pub mod simple;
 

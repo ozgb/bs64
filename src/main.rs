@@ -43,7 +43,7 @@ fn benchmark_decode(num_bytes: usize, iterations: usize) {
     let encoded = bs64::encode(&bytes);
     let encoded = encoded.as_bytes();
 
-    println!("Decode:");
+    println!("# Decode");
     println!(
         "{0: <20} | {1: <15} | {2: <10}",
         "name", "its_per_sec", "ns_per_it"
@@ -63,6 +63,14 @@ fn benchmark_decode(num_bytes: usize, iterations: usize) {
     }
     let total = start.elapsed();
     print_performance("bs64::decode_mut()", total, iterations);
+
+    let mut output = vec![0u8; (num_bytes * 4) / 3 + 4];
+    let start = Instant::now();
+    for _ in 0..iterations {
+        bs64::simple::decode(&encoded, output.as_mut_slice()).unwrap();
+    }
+    let total = start.elapsed();
+    print_performance("bs64 fallback", total, iterations);
 
     let start = Instant::now();
     for _ in 0..iterations {
@@ -102,7 +110,7 @@ fn benchmark_encode(num_bytes: usize, iterations: usize) {
     for i in 0..num_bytes {
         bytes.push(i as u8);
     }
-    println!("Encode:");
+    println!("# Encode");
     println!(
         "{0: <20} | {1: <15} | {2: <10}",
         "name", "its_per_sec", "ns_per_it"
@@ -126,20 +134,10 @@ fn benchmark_encode(num_bytes: usize, iterations: usize) {
     let mut output = vec![0u8; (num_bytes * 4) / 3 + 4];
     let start = Instant::now();
     for _ in 0..iterations {
-        unsafe {
-            bs64::avx2::encode(output.as_mut_slice(), &bytes);
-        }
-    }
-    let total = start.elapsed();
-    print_performance("avx2", total, iterations);
-
-    let mut output = vec![0u8; (num_bytes * 4) / 3 + 4];
-    let start = Instant::now();
-    for _ in 0..iterations {
         bs64::simple::encode(&bytes, output.as_mut_slice());
     }
     let total = start.elapsed();
-    print_performance("simd", total, iterations);
+    print_performance("bs64 fallback", total, iterations);
 
     let start = Instant::now();
     for _ in 0..iterations {

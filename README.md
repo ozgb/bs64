@@ -2,11 +2,11 @@
 
 ✨ SIMD-accelerated Base64 for Rust ✨
 
-## 🌟 Features:
+## 🌟 Features
 - 💡 Uses AVX2 instructions for super-fast encoding and decoding
 - 🔄 Fallback when AVX2 is unavailable uses any available SIMD
 
-## 🎯 Project goals:
+## 🎯 Project goals
 - 🔧 Simple, idiomatic API
 - 📦 Sensible defaults
 - ⚡ Fast

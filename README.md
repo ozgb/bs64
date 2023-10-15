@@ -36,7 +36,7 @@ fn main() {
 
 ## Benchmarks
 
-Ran using 100k inputs, 10000 iterations on an Intel® Core™ i7-1065G7:
+Ran using 100k inputs, 10000 iterations on an Intel® Core™ i7-1065G7. Comparisons are made against [base64](https://crates.io/crates/base64) and [data-encoding](https://crates.io/crates/data-encoding) crates.
 ```
 cargo run --features "cli" --release -- -b 100000 -i 10000
 ```

@@ -21,29 +21,29 @@ pub enum CodecError {
 #[derive(Default)]
 pub struct EncodeOptions {}
 
-pub fn encode_len(input: &[u8]) -> usize {
-    match input.len() % 3 {
-        0 => input.len() / 3 * 4,
-        _ => input.len() / 3 * 4 + 4,
+pub fn encode_len(input_len: usize) -> usize {
+    match input_len % 3 {
+        0 => input_len / 3 * 4,
+        _ => input_len / 3 * 4 + 4,
     }
 }
 
-pub fn decode_len(input: &[u8]) -> usize {
-    (input.len() / 4) * 3
+pub fn decode_len(input_len: usize) -> usize {
+    (input_len / 4) * 3
 }
 
 impl EncodeOptions {
     pub fn encode(self, input: &[u8]) -> String {
-        let mut output = vec![0u8; encode_len(input)];
+        let mut output = vec![0u8; encode_len(input.len())];
         avx2::encode_with_fallback(&mut output, input);
         unsafe { String::from_utf8_unchecked(output) }
     }
 
     pub fn encode_mut(self, input: &[u8], output: &mut [u8]) -> Result<usize, CodecError> {
-        if output.len() < encode_len(input) {
+        if output.len() < encode_len(input.len()) {
             Err(CodecError::OutputLengthTooShort(
                 output.len(),
-                encode_len(input),
+                encode_len(input.len()),
             ))
         } else {
             Ok(avx2::encode_with_fallback(output, input))
@@ -56,16 +56,16 @@ pub struct DecodeOptions {}
 
 impl DecodeOptions {
     pub fn decode(self, input: &[u8]) -> Result<Vec<u8>, CodecError> {
-        let mut output = vec![0u8; decode_len(input)];
+        let mut output = vec![0u8; decode_len(input.len())];
         avx2::decode_with_fallback(&mut output, &input)?;
         Ok(output)
     }
 
     pub fn decode_mut(self, input: &[u8], output: &mut [u8]) -> Result<usize, CodecError> {
-        if output.len() < decode_len(input) {
+        if output.len() < decode_len(input.len()) {
             Err(CodecError::OutputLengthTooShort(
                 output.len(),
-                decode_len(input),
+                decode_len(input.len()),
             ))
         } else {
             avx2::decode_with_fallback(output, input)

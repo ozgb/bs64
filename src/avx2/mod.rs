@@ -89,14 +89,15 @@ pub unsafe fn encode(dest: &mut [u8], str: &[u8]) -> usize {
     let str_len = str.len() as isize;
 
     if str.len() >= 32 - 4 {
+        // i32::MIN means top bit is set
         let mask_vec = _mm256_set_epi32(
-            0x8000000_i32,
-            0x8000000_i32,
-            0x8000000_i32,
-            0x8000000_i32,
-            0x8000000_i32,
-            0x8000000_i32,
-            0x8000000_i32,
+            i32::MIN,
+            i32::MIN,
+            i32::MIN,
+            i32::MIN,
+            i32::MIN,
+            i32::MIN,
+            i32::MIN,
             0, // we do not load the first 4 bytes
         );
 

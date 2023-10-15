@@ -2,7 +2,7 @@
 name = "bs64"
 description = "SIMD-accelerated Base64 encoding and decoding library"
 authors = [ "ozgb" ]
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 keywords = ["base64", "simd"]
 license = "MIT OR Apache-2.0"

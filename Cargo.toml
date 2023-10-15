@@ -9,6 +9,9 @@ license = "MIT OR Apache-2.0"
 categories = ["encoding"]
 repository = "https://github.com/ozgb/bs64"
 readme = "README.md"
+exclude = [
+    ".vscode/"
+]
 
 [features]
 cli = ["dep:clap", "dep:rand", "dep:data-encoding", "dep:base64"]

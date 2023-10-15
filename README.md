@@ -7,5 +7,8 @@ Project goals:
 
 ## TODO
 
-- Change default implementation with feature flags
-- Builders for custom configs at runtime
+- [ ] Integration tests
+- [ ] Benchmarking suite
+- [ ] Regression tests + benchmark in Github Actions
+- [ ] Change default implementation with feature flags
+- [ ] Builders for custom configs at runtime

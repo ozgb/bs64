@@ -86,3 +86,7 @@ pub fn encode_mut(input: &[u8], output: &mut [u8]) -> Result<usize, CodecError> 
 pub fn decode(input: &[u8]) -> Result<Vec<u8>, CodecError> {
     DecodeOptions::default().decode(input)
 }
+
+pub fn decode_mut(input: &[u8], output: &mut [u8]) -> Result<usize, CodecError> {
+    DecodeOptions::default().decode_mut(input, output)
+}

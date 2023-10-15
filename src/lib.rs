@@ -12,11 +12,13 @@ pub enum CodecError {
     CodecError(#[from] std::io::Error),
     #[error("output length {0} is < expected length {1}")]
     OutputLengthTooShort(usize, usize),
+    #[error("input length {0} != 0 % 4")]
+    InputModError(usize),
+    #[error("invalid input: {0}")]
+    InvalidInput(String),
     #[error("unknown codec error")]
     Unknown,
 }
-
-const CHARS: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 #[derive(Default)]
 pub struct EncodeOptions {}
@@ -26,6 +28,10 @@ pub fn encode_len(input: &[u8]) -> usize {
         0 => input.len() / 3 * 4,
         _ => input.len() / 3 * 4 + 4,
     }
+}
+
+pub fn decode_len(input: &[u8]) -> usize {
+    (input.len() / 4) * 3
 }
 
 impl EncodeOptions {
@@ -51,8 +57,21 @@ impl EncodeOptions {
 pub struct DecodeOptions {}
 
 impl DecodeOptions {
-    pub fn decode(self, input: &[u8]) -> Result<Vec<u8>, data_encoding::DecodeError> {
-        BASE64.decode(input)
+    pub fn decode(self, input: &[u8]) -> Result<Vec<u8>, CodecError> {
+        let mut output = vec![0u8; decode_len(input)];
+        simple::decode(&input, &mut output)?;
+        Ok(output)
+    }
+
+    pub fn decode_mut(self, input: &[u8], output: &mut [u8]) -> Result<usize, CodecError> {
+        if output.len() < decode_len(input) {
+            Err(CodecError::OutputLengthTooShort(
+                output.len(),
+                decode_len(input),
+            ))
+        } else {
+            simple::decode(input, output)
+        }
     }
 }
 
@@ -64,6 +83,6 @@ pub fn encode_mut(input: &[u8], output: &mut [u8]) -> Result<usize, CodecError> 
     EncodeOptions::default().encode_mut(input, output)
 }
 
-pub fn decode(input: &[u8]) -> Result<Vec<u8>, data_encoding::DecodeError> {
+pub fn decode(input: &[u8]) -> Result<Vec<u8>, CodecError> {
     DecodeOptions::default().decode(input)
 }

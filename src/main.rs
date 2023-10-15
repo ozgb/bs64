@@ -3,15 +3,18 @@ use data_encoding::BASE64;
 use std::time::{Duration, Instant};
 
 fn eval() {
-    for num_bytes in 100..104 {
-        let mut output = vec![0u8; (num_bytes * 4) / 3 + 4];
+    for num_bytes in 50..54 {
         let mut bytes = Vec::with_capacity(num_bytes);
         for i in 0..num_bytes {
             bytes.push(i as u8);
         }
+        let mut output = vec![0u8; bs64::encode_len(&bytes)];
         bs64::simple::encode(&bytes, output.as_mut_slice());
+        let mut decoded_output = vec![0u8; bytes.len()];
+        bs64::simple::decode(&output, decoded_output.as_mut_slice()).unwrap();
         println!("{:?}", String::from_utf8(output.to_vec()).unwrap());
         println!("{}", BASE64.encode(&bytes));
+        println!("{:?}", decoded_output);
     }
 }
 
@@ -30,6 +33,7 @@ fn main() {
     for i in 0..num_bytes {
         bytes.push(i as u8);
     }
+    println!("Encode:");
     println!(
         "{0: <20} | {1: <15} | {2: <10}",
         "name", "its_per_sec", "ns_per_it"

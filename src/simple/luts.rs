@@ -1,7 +1,3 @@
-pub const CHAR62: u8 = b'+';
-pub const CHAR63: u8 = b'/';
-pub const CHARPAD: u8 = b'=';
-
 pub const E0: [u8; 256] = [
     b'A', b'A', b'A', b'A', b'B', b'B', b'B', b'B', b'C', b'C', b'C', b'C', b'D', b'D', b'D', b'D',
     b'E', b'E', b'E', b'E', b'F', b'F', b'F', b'F', b'G', b'G', b'G', b'G', b'H', b'H', b'H', b'H',

@@ -28,6 +28,11 @@ fn main() {
 
 ## Benchmarks
 
+Ran using 100k inputs, 10000 iterations on an Intel® Core™ i7-1065G7:
+```
+cargo run --features "cli" --release -- -b 100000 -i 10000
+```
+
 ### Encode
 
 | name                  | MB/s

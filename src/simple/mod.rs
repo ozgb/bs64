@@ -2,6 +2,8 @@ use self::luts::{E0, E1, E2};
 
 const CHARPAD: u8 = b'=';
 
+use super::CodecError;
+
 mod luts;
 
 #[repr(packed(1))]

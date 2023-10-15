@@ -2,7 +2,6 @@ use base64::{engine::general_purpose, Engine as _};
 use data_encoding::BASE64;
 use std::time::{Duration, Instant};
 
-#[allow(dead_code)]
 fn eval() {
     for num_bytes in 100..104 {
         let mut output = vec![0u8; (num_bytes * 4) / 3 + 4];
@@ -10,7 +9,7 @@ fn eval() {
         for i in 0..num_bytes {
             bytes.push(i as u8);
         }
-        bs64::codec::simplesimd::encode(&bytes, output.as_mut_slice());
+        bs64::simple::encode(&bytes, output.as_mut_slice());
         println!("{:?}", String::from_utf8(output.to_vec()).unwrap());
         println!("{}", BASE64.encode(&bytes));
     }
@@ -55,7 +54,7 @@ fn main() {
     let start = Instant::now();
     for _ in 0..iterations {
         unsafe {
-            bs64::codec::avx2::encode(output.as_mut_slice(), &bytes);
+            bs64::avx2::encode(output.as_mut_slice(), &bytes);
         }
     }
     let total = start.elapsed();
@@ -64,7 +63,7 @@ fn main() {
     let mut output = vec![0u8; (num_bytes * 4) / 3 + 4];
     let start = Instant::now();
     for _ in 0..iterations {
-        bs64::codec::simplesimd::encode(&bytes, output.as_mut_slice());
+        bs64::simple::encode(&bytes, output.as_mut_slice());
     }
     let total = start.elapsed();
     print_performance("simd", total, iterations);

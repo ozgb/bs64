@@ -1,7 +1,20 @@
-use codec::{avx2, CodecError};
+use thiserror::Error;
+
 use data_encoding::BASE64;
 
-pub mod codec;
+pub mod avx2;
+pub mod simple;
+
+/// The error type for encoding and decoding.
+#[derive(Error, Debug)]
+pub enum CodecError {
+    #[error("codec error")]
+    CodecError(#[from] std::io::Error),
+    #[error("output length {0} is < expected length {1}")]
+    OutputLengthTooShort(usize, usize),
+    #[error("unknown codec error")]
+    Unknown,
+}
 
 const CHARS: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
@@ -24,7 +37,10 @@ impl EncodeOptions {
 
     pub fn encode_mut(self, input: &[u8], output: &mut [u8]) -> Result<usize, CodecError> {
         if output.len() < encode_len(input) {
-            Err(CodecError::BufferOverflow)
+            Err(CodecError::OutputLengthTooShort(
+                output.len(),
+                encode_len(input),
+            ))
         } else {
             Ok(avx2::encode_with_fallback(output, input))
         }

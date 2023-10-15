@@ -1,8 +1,14 @@
 [package]
 name = "bs64"
+description = "SIMD-accelerated Base64 encoding and decoding library"
 authors = [ "ozgb" ]
 version = "0.1.0"
 edition = "2021"
+keywords = ["base64", "simd"]
+license = "MIT OR Apache-2.0"
+categories = ["encoding"]
+repository = "https://github.com/ozgb/bs64"
+readme = "README.md"
 
 [features]
 cli = ["dep:clap", "dep:rand", "dep:data-encoding", "dep:base64"]

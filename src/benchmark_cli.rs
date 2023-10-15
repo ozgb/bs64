@@ -20,24 +20,6 @@ struct Args {
     iterations: usize,
 }
 
-fn eval() {
-    for num_bytes in 100..104 {
-        let mut output = vec![0u8; bs64::encode_len(num_bytes)];
-        let mut bytes = Vec::with_capacity(num_bytes);
-        for i in 0..num_bytes {
-            bytes.push(i as u8);
-        }
-        bs64::simple::encode(&bytes, output.as_mut_slice());
-        let mut decoded_output = vec![0u8; bytes.len()];
-        unsafe {
-            bs64::avx2::decode(decoded_output.as_mut_slice(), &output).unwrap();
-        }
-        println!("{:?}", String::from_utf8(output.to_vec()).unwrap());
-        println!("{}", BASE64.encode(&bytes));
-        println!("{:?}", decoded_output);
-    }
-}
-
 /// main function
 pub fn main() {
     let args = Args::parse();
@@ -55,10 +37,10 @@ fn print_performance(name: &str, time: Duration, iterations: usize, num_bytes: u
 }
 
 fn benchmark_decode(num_bytes: usize, iterations: usize) {
-    let rng = SmallRng::from_seed(20);
+    let mut rng = SmallRng::seed_from_u64(20);
     let mut bytes = Vec::with_capacity(num_bytes);
-    for i in 0..num_bytes {
-        bytes.push(i as u8);
+    for _ in 0..num_bytes {
+        bytes.push(rng.gen());
     }
     let encoded = bs64::encode(&bytes);
     let encoded = encoded.as_bytes();
@@ -94,7 +76,7 @@ fn benchmark_decode(num_bytes: usize, iterations: usize) {
         BASE64.decode(&encoded).unwrap();
     }
     let total = start.elapsed();
-    print_performance("data_enc", total, iterations, num_bytes);
+    print_performance("data_encoding", total, iterations, num_bytes);
 
     let mut output = vec![0u8; BASE64.decode_len(encoded.len()).unwrap()];
     let start = Instant::now();
@@ -102,7 +84,7 @@ fn benchmark_decode(num_bytes: usize, iterations: usize) {
         BASE64.decode_mut(&encoded, &mut output).unwrap();
     }
     let total = start.elapsed();
-    print_performance("data_enc mut", total, iterations, num_bytes);
+    print_performance("data_encoding mut", total, iterations, num_bytes);
 
     let start = Instant::now();
     for _ in 0..iterations {
@@ -158,7 +140,7 @@ fn benchmark_encode(num_bytes: usize, iterations: usize) {
         BASE64.encode(&bytes);
     }
     let total = start.elapsed();
-    print_performance("data_enc", total, iterations, num_bytes);
+    print_performance("data_encoding", total, iterations, num_bytes);
 
     let mut output = vec![0u8; BASE64.encode_len(bytes.len())];
     let start = Instant::now();
@@ -166,7 +148,7 @@ fn benchmark_encode(num_bytes: usize, iterations: usize) {
         BASE64.encode_mut(&bytes, &mut output);
     }
     let total = start.elapsed();
-    print_performance("data_enc mut", total, iterations, num_bytes);
+    print_performance("data_encoding mut", total, iterations, num_bytes);
 
     let start = Instant::now();
     for _ in 0..iterations {

@@ -21,7 +21,6 @@ struct OutputBytes {
     d4: u8,
 }
 
-#[inline(always)]
 fn encode_any_inner(src: &[InputBytes], dest: &mut [OutputBytes]) -> usize {
     for (dest, src) in dest.iter_mut().zip(src.iter()) {
         let (t1, t2, t3) = (src.t1, src.t2, src.t3);
@@ -34,7 +33,6 @@ fn encode_any_inner(src: &[InputBytes], dest: &mut [OutputBytes]) -> usize {
     dest.len() * 4
 }
 
-#[inline(always)]
 fn encode_32_inner(src: &[InputBytes], dest: &mut [OutputBytes]) -> usize {
     for (dest, src) in dest.iter_mut().zip(src.iter()) {
         let (t1, t2, t3) = (src.t1, src.t2, src.t3);

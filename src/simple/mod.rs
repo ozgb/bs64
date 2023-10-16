@@ -79,47 +79,50 @@ unsafe fn encode_any(src: &[u8], dest: &mut [u8]) -> usize {
 /// Returns the number of bytes written to dest
 /// Panics if dest is not large enough
 pub fn encode(src: &[u8], dest: &mut [u8]) -> usize {
-    let len = src.len();
+    let src_iter = src.chunks(24);
+    let dest_iter = dest.chunks_mut(32);
+    let data_iter = src_iter.zip(dest_iter);
+
     let mut src_i = 0;
     let mut dest_i = 0;
-    loop {
-        if len - src_i < 24 {
+    let mut num_chunks = 0;
+    for (src, dest) in data_iter {
+        // Final chunk
+        if src.len() < 24 {
+            if src.len() > 2 {
+                unsafe { dest_i += encode_any(src, dest) }
+                src_i = (dest_i / 4) * 3;
+            }
+
+            match src.len() - src_i {
+                0 => (),
+                1 => {
+                    let t1 = src[src_i];
+                    dest[dest_i] = E0[t1 as usize];
+                    dest[dest_i + 1] = E1[((t1 & 0x03) << 4) as usize];
+                    dest[dest_i + 2] = b'=';
+                    dest[dest_i + 3] = b'=';
+                    dest_i += 4;
+                }
+                _ => {
+                    let (t1, t2) = (src[src_i], src[src_i + 1]);
+                    dest[dest_i] = E0[t1 as usize];
+                    dest[dest_i + 1] = E1[(((t1 & 0x03) << 4) | ((t2 >> 4) & 0x0F)) as usize];
+                    dest[dest_i + 2] = E1[((t2 & 0x0F) << 2) as usize];
+                    dest[dest_i + 3] = b'=';
+                    dest_i += 4;
+                }
+            }
             break;
         }
+
         unsafe {
-            encode_32(&src[src_i..src_i + 24], &mut dest[dest_i..dest_i + 32]);
+            encode_32(src, dest);
         }
-
-        src_i += 24;
-        dest_i += 32;
+        num_chunks += 1;
     }
 
-    if len - src_i > 2 {
-        unsafe { dest_i += encode_any(&src[src_i..], &mut dest[dest_i..]) }
-        src_i = (dest_i / 4) * 3;
-    }
-
-    match len - src_i {
-        0 => (),
-        1 => {
-            let t1 = src[src_i];
-            dest[dest_i] = E0[t1 as usize];
-            dest[dest_i + 1] = E1[((t1 & 0x03) << 4) as usize];
-            dest[dest_i + 2] = b'=';
-            dest[dest_i + 3] = b'=';
-            dest_i += 4;
-        }
-        _ => {
-            let (t1, t2) = (src[src_i], src[src_i + 1]);
-            dest[dest_i] = E0[t1 as usize];
-            dest[dest_i + 1] = E1[(((t1 & 0x03) << 4) | ((t2 >> 4) & 0x0F)) as usize];
-            dest[dest_i + 2] = E1[((t2 & 0x0F) << 2) as usize];
-            dest[dest_i + 3] = b'=';
-            dest_i += 4;
-        }
-    }
-
-    dest_i
+    dest_i + (num_chunks * 32)
 }
 
 fn decode_any_inner(src: &[Chars], dest: &mut [Bytes]) -> Result<usize, CodecError> {

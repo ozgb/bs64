@@ -78,6 +78,7 @@ The code is optimised for x86_64, and therefore assumes large-ish caches are ava
 Useful links:
 - https://github.com/lemire/fastbase64
 - https://www.nickwilcox.com/blog/autovec/
+- https://en.wikipedia.org/wiki/Base64
 
 ## TODO
 

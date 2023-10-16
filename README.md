@@ -65,11 +65,25 @@ cargo run --features "cli" --release -- -b 100000 -i 10000
 | base64                 | 761.68        |
 | base64 mut             | 805.60        |
 
+## Implementation Details
+
+Code was initially ported from https://github.com/lemire/fastbase64
+
+The `simple` fallback implementation is based on the `chromium` implementation from the fastbase64 repo. The use of iterators and chunking the input in the Rust implementation makes it easy for the compiler to vectorise the processing.
+
+The AVX2 implementation is largely untouched compared with the original `fastbase64` implementation.
+
+The code is optimised for x86_64, and therefore assumes large-ish caches are available for storing lookup tables. I created a naive implementation that indexed a static array of valid base64 chars - the performance there was only slightly worse than the chromium LUT implementation, so I may add this as an option for low-memory targets (i.e. embedded).
+
+Useful links:
+- https://github.com/lemire/fastbase64
+- https://www.nickwilcox.com/blog/autovec/
 
 ## TODO
 
 - [x] Integration tests
 - [x] Benchmarking suite
+- [ ] Comply with MIME, UTF-7, and other Base64 standards
 - [ ] Regression tests + benchmark in Github Actions
 - [ ] Change default implementation with feature flags
 - [ ] Builders for custom configs at runtime

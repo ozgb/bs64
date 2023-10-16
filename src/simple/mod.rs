@@ -77,7 +77,6 @@ unsafe fn encode_any(src: &[u8], dest: &mut [u8]) -> usize {
 
 /// Encode src slice to dest slice
 /// Returns the number of bytes written to dest
-/// Panics if dest is not large enough
 pub fn encode(src: &[u8], dest: &mut [u8]) -> usize {
     let src_iter = src.chunks(24);
     let dest_iter = dest.chunks_mut(32);
@@ -217,7 +216,7 @@ pub fn decode(src: &[u8], dest: &mut [u8]) -> Result<usize, CodecError> {
     let mut dest_i = 0;
     loop {
         // Use -4 to allow for padding bytes
-        if len - 4 - src_i < 32 {
+        if len.saturating_sub(4).saturating_sub(src_i) < 32 {
             break;
         }
         unsafe {

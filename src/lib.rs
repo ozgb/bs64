@@ -57,7 +57,8 @@ pub struct DecodeOptions {}
 impl DecodeOptions {
     pub fn decode(self, input: &[u8]) -> Result<Vec<u8>, CodecError> {
         let mut output = vec![0u8; decode_len(input.len())];
-        avx2::decode_with_fallback(&mut output, &input)?;
+        let decode_len = avx2::decode_with_fallback(&mut output, &input)?;
+        output.truncate(decode_len);
         Ok(output)
     }
 

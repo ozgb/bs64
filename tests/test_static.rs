@@ -31,6 +31,10 @@ fn length_to_1000_simple() {
         let mut output = vec![0u8; bs64::encode_len(input.len())];
         bs64::simple::encode(&input, &mut output);
         assert_eq!(output, expected.as_bytes());
+
+        let mut decoded = vec![0u8; i];
+        bs64::simple::decode(&output, &mut decoded).unwrap();
+        assert_eq!(decoded, input);
     }
 }
 
@@ -45,6 +49,9 @@ fn length_to_1000() {
         let expected = BASE64.encode(&input);
         let output = bs64::encode(&input);
         assert_eq!(output, expected);
+
+        let decoded = bs64::decode(output.as_bytes()).unwrap();
+        assert_eq!(decoded, input);
     }
 }
 

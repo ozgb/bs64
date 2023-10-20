@@ -71,6 +71,14 @@ fn benchmark_decode(num_bytes: usize, iterations: usize) {
     let total = start.elapsed();
     print_performance("bs64 fallback", total, iterations, num_bytes);
 
+    let mut output = vec![0u8; (num_bytes * 4) / 3 + 4];
+    let start = Instant::now();
+    for _ in 0..iterations {
+        bs64::simple::decode_iter(&encoded, output.as_mut_slice()).unwrap();
+    }
+    let total = start.elapsed();
+    print_performance("bs64 fallback iter", total, iterations, num_bytes);
+
     let start = Instant::now();
     for _ in 0..iterations {
         BASE64.decode(&encoded).unwrap();

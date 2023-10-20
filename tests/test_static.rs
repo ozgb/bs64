@@ -35,6 +35,10 @@ fn length_to_1000_simple() {
         let mut decoded = vec![0u8; i];
         bs64::simple::decode(&output, &mut decoded).unwrap();
         assert_eq!(decoded, input);
+
+        let mut decoded = vec![0u8; i];
+        bs64::simple::decode_iter(&output, &mut decoded).unwrap();
+        assert_eq!(decoded, input);
     }
 }
 

@@ -263,3 +263,68 @@ pub fn decode(src: &[u8], dest: &mut [u8]) -> Result<usize, CodecError> {
 
     Ok(dest_i)
 }
+
+pub fn decode_iter(src: &[u8], dest: &mut [u8]) -> Result<usize, CodecError> {
+    if src.len() == 0 {
+        return Ok(0);
+    }
+
+    let src_chunks = src.chunks(32);
+    let mut data_iter = src_chunks.zip(dest.chunks_mut(24)).peekable();
+
+    let mut final_len = 0;
+
+    while let Some((src, dest)) = data_iter.next() {
+        if data_iter.peek().is_none() {
+            // Remove padding (if exists)
+            let src = match &src[..] {
+                [rest @ .., b'=', b'='] => rest,
+                [rest @ .., b'='] => rest,
+                _ => &src,
+            };
+            let leftover = src.len() % 4;
+            let len_nopad = match leftover {
+                0 => src.len(),
+                _ => (src.len() / 4) * 4,
+            };
+
+            let mut dest_i;
+            unsafe {
+                dest_i = decode_any(src, dest)?;
+            }
+
+            match leftover {
+                0 => (),
+                2 => {
+                    let x = D0[src[len_nopad] as usize] | D1[src[len_nopad + 1] as usize];
+                    dest[dest_i] = x as u8; // i.e. second char
+                    dest_i += 1;
+                }
+                3 => {
+                    let y = &src[len_nopad..len_nopad + 3];
+                    let x: u32 = D0[y[0] as usize] | D1[y[1] as usize] | D2[y[2] as usize]; /* 0x3c */
+
+                    let x0: *const u8 = &x as *const u32 as *const u8;
+                    let x1 = unsafe { x0.offset(1) };
+
+                    unsafe {
+                        dest[dest_i] = *x0;
+                        dest[dest_i + 1] = *x1;
+                    }
+                    dest_i += 2;
+                }
+                _ => unreachable!(),
+            }
+
+            final_len += dest_i;
+            break;
+        }
+
+        unsafe {
+            decode_32(&src, dest)?;
+        }
+        final_len += 24;
+    }
+
+    Ok(final_len)
+}
